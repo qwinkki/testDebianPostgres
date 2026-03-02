@@ -1,0 +1,47 @@
+cmake_minimum_required(VERSION 3.20)
+project(testDebianDB)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# --- Executable ---
+add_executable(testDebianDB
+    src/common/common.h
+    src/main/main.h
+    src/main/main.cpp
+    src/database/database.h
+    src/database/database.cpp
+)
+
+# --- Cross-platform libpqxx setup ---
+if(WIN32)
+    # Windows + vcpkg
+    if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+        set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake CACHE STRING "")
+    endif()
+        find_package(libpqxx CONFIG REQUIRED)
+
+    target_include_directories(testDebianDB PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(testDebianDB PRIVATE libpqxx::pqxx)
+elseif(APPLE)
+    # macOS + Homebrew
+    set(LIBPQXX_INCLUDE_DIR /opt/homebrew/Cellar/libpqxx/7.10.4/include)
+    set(LIBPQXX_LIBRARY     /opt/homebrew/Cellar/libpqxx/7.10.4/lib/libpqxx.dylib)
+    set(LIBPQ_INCLUDE_DIR   /opt/homebrew/opt/libpq/include)
+    set(LIBPQ_LIBRARY       /opt/homebrew/opt/libpq/lib/libpq.dylib)
+
+    target_include_directories(testDebianDB PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${LIBPQXX_INCLUDE_DIR}
+        ${LIBPQ_INCLUDE_DIR}
+    )
+
+    target_link_libraries(testDebianDB PRIVATE
+        ${LIBPQXX_LIBRARY}
+        ${LIBPQ_LIBRARY}
+    )
+endif()
