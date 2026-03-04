@@ -1,2 +1,3 @@
-#include "common/common.h"
-#include "database/database.h"
+#include <iostream>
+#include <pqxx/pqxx>
+#include <string>

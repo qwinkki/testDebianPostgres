@@ -1,1 +1,0 @@
-/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/opt/homebrew/opt/postgresql@16/lib CMakeFiles/testDebianDB.dir/src/main/main.cpp.o CMakeFiles/testDebianDB.dir/src/database/database.cpp.o -o testDebianDB  /opt/homebrew/Cellar/libpqxx/7.10.4/lib/libpqxx.dylib /opt/homebrew/opt/libpq/lib/libpq.dylib

@@ -7,11 +7,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # --- Executable ---
 add_executable(testDebianDB
-    src/common/common.h
     src/main/main.h
     src/main/main.cpp
-    src/database/database.h
-    src/database/database.cpp
 )
 
 # --- Cross-platform libpqxx setup ---
