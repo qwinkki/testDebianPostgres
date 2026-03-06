@@ -1,15 +1,18 @@
 #include "main.h"
 
-void printUsage(pqxx::work &txn, const std::string &title, const std::string &query){
-    pqxx::result res = txn.exec(query);
-    txn.commit();
-    std::cout << title << ":\n";
+void printUsage(pqxx::work& txn, const std::string& title, const std::string& query)
+{
+    std::cout << "\n===== " << title << " =====\n";
 
-    for (const auto& row : res) {
-        for (const auto& field : row) {
-            std::cout << field.name() << ": " << field.c_str() << '\n';
+    pqxx::result res = txn.exec(query);
+
+    for (const auto& row : res)
+    {
+        for (const auto& field : row)
+        {
+            std::cout << field.name() << ": " << field.c_str() << std::endl;
         }
-        std::cout << "\n";
+        std::cout << "-------------------------\n";
     }
 }
 
@@ -42,29 +45,49 @@ int main(){
         pqxx::work txn(conn);
 
         // server info
-        printUsage(txn, "\nServer Version", "SELECT version()");
+        printUsage(txn, "\nServer Version",
+        "SELECT version();");
 
         // system info
-        printUsage(txn, "Информация о сервере (inet)", "SELECT inet_server_addr() AS server_ip, inet_server_port() AS server_port;");
+        printUsage(txn, "Server Network Info",
+        "SELECT COALESCE(inet_server_addr()::text, 'local_socket') AS server_ip, "
+        "inet_server_port() AS server_port;");
 
         // current db
-        printUsage(txn, "Current Database", "SELECT current_database(), current_user;");
+        printUsage(txn, "Current Database",
+        "SELECT current_database() AS database_name, "
+        "current_user AS user_name;");
 
         // db size
-        printUsage(txn, "Database Size", "SELECT pg_size_pretty(pg_database_size(current_database())) AS db_size;");
+        printUsage(txn, "Database Size",
+        "SELECT current_database() AS db_name, "
+        "pg_size_pretty(pg_database_size(current_database())) AS db_size;");
 
         // list of tables
-        printUsage(txn, "List of Tables", "SELECT schemaname, tablename FROM pg_tables "
-                    "WHERE schemaname NOT IN ('pg_catalog', 'information_schema');");
+        printUsage(txn, "List of Tables",
+        "SELECT schemaname, tablename "
+        "FROM pg_tables "
+        "WHERE schemaname NOT IN ('pg_catalog', 'information_schema', 'pg_toast');");
 
-        // table sizes
-        printUsage(txn, "Table Sizes", "SELECT table_name, pg_size_pretty(pg_total_relation_size(table_name)) " 
-            "AS size FROM information_schema.tables WHERE table_schema = 'public';");
+        // table sizes (исправленный вариант)
+        printUsage(txn, "Table Sizes",
+        "SELECT relname AS table_name, "
+        "pg_size_pretty(pg_total_relation_size(relid)) AS size "
+        "FROM pg_catalog.pg_statio_user_tables "
+        "ORDER BY pg_total_relation_size(relid) DESC;");
 
         // main server settings
-        printUsage(txn, "Main Server Settings", "SELECT name, setting FROM pg_settings WHERE name " 
-            "IN ('max_connections', 'shared_buffers', 'work_mem', 'maintenance_work_mem', 'effective_cache_size', 'max_worker_processes');");
-
+        printUsage(txn, "Main Server Settings",
+        "SELECT name, setting, unit "
+        "FROM pg_settings "
+        "WHERE name IN ("
+        "'max_connections', "
+        "'shared_buffers', "
+        "'work_mem', "
+        "'maintenance_work_mem', "
+        "'effective_cache_size', "
+        "'max_worker_processes'"
+        ");");
         txn.commit();
         conn.close();
     }catch(const std::exception &e){
